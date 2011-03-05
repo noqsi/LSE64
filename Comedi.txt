@@ -1,0 +1,57 @@
+Comedi bindings for LSE64
+
+This is pretty minimal right now. More will be implemented as needed.
+
+	" comedi" loadmod 	# loads the Comedi module
+
+In the following, all arguments are integers:
+
+data represents a value to be written to/read from the device.
+bit represents a 1 or 0 to be written to/read from the device.
+aref enumerates potential analog reference points.
+range enumerates analog ranges (device dependent).
+chan is the channel number.
+subdev is the subdevice number.
+dev is the Comedi device number (3 means /dev/comdei3).
+
+!daq invokes the comedi_data_write() function:
+
+	data aref range chan subdev dev !daq yields nothing
+
+@daq invokes the comedi_data_read() function:
+
+	aref range chan subdev dev @daq yields data
+	
+!dio invokes the comedi_dio_write() function:
+
+	bit chan subdev dev !dio yields nothing
+
+@dio invokes the comedi_dio_read() function:
+
+	chan subdev dev @dio yields bit
+	
+<dio> configures a bit or block of bits for input or output (device dependent) using the comedi_dio_config function. The parameter dir is either 0 for input or 1 for output.
+
+	dir chan subdev dev <dio> yields nothing
+	
+!@dio selectively writes a whole register (up to 32 bits) at once, and then reads it back. The bits set in mask determine which bits in the register will be written.
+
+	data mask subdev dev !@dio yields newdata
+
+Constants:
+
+	AREF_GROUND yields 0
+	AREF_COMMON yields 1
+	AREF_DIFF yields 2
+	AREF_OTHER yields 3
+	COMEDI_INPUT yields 0
+	COMEDI_OUTPUT yields 1
+
+Note that these constants are device independent, but a particular device may not implement all of them. 
+
+The "comedi_test" command in the "testing" directory under the comedilib source directory can list the available ranges for a particular device: type "comedi_test --help" at a shell prompt for options.
+
+For an output channel, @daq will generally read back the most recent data written. !daq will generally fail for input channels.
+
+For information on Comedi, see www.comedi.org
+

@@ -1,0 +1,75 @@
+#                                               -*- Autoconf -*-
+# Process this file with autoconf to produce a configure script.
+
+AC_PREREQ(2.57)
+AC_INIT(lse64, 0.3, jpd@space.mit.edu)
+AC_CONFIG_SRCDIR([src/lse64.c])
+AM_CONFIG_HEADER([src/config.h])
+AM_INIT_AUTOMAKE
+
+# Checks for programs.
+AC_PROG_CC
+AC_LIBTOOL_DLOPEN
+AC_PROG_LIBTOOL
+
+# Checks for libraries.
+AC_CHECK_LIB([comedi], [comedi_data_write], 
+	     [AC_CHECK_HEADER([comedi.h],
+	         [COMEDILIBS="-lcomedi"; AC_DEFINE([HAVE_LIBCOMEDI], [], [Have the comedi libraries available])],
+	     	 AC_MSG_WARN([** COMEDI header files not found - comedi support disabled]))],
+	     AC_MSG_WARN([** COMEDI library not found - comedi support disabled]))
+AC_SUBST(COMEDILIBS)
+AM_CONDITIONAL(HAVE_COMEDI, [test "x$COMEDILIBS" != x])
+AC_CHECK_LIB([m], [fmod])
+
+# Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS([dlfcn.h math.h limits.h locale.h stdint.h stdlib.h string.h sys/param.h unistd.h])
+
+# Parallel Port/Sequencer stuff
+AC_CHECK_HEADER([linux/lp.h],
+	         [YES_SEQ="yes"; AC_DEFINE([HAVE_LP_H], [], [Have the linux parallel port/sequencer junk available])],
+		 AC_MSG_WARN([** linux/lp.h header file not found - parallel port sequencer support disabled]))
+AM_CONDITIONAL(HAVE_SEQUENCER, [test "x$YES_SEQ" = xyes])
+
+# Checks for typedefs, structures, and compiler characteristics.
+
+# Checks for library functions.
+AC_FUNC_STRTOD
+AC_CHECK_FUNCS([setlocale])
+
+# Shared-Modules Support
+AC_ARG_ENABLE(shared-modules,
+[  --enable-shared-modules      Enable shared modules.
+  --disable-shared-modules     Disable shared modules. ],
+
+[ 
+  case "$enableval" in
+  yes)
+    build_shared_modules=yes
+    ;;
+  no)
+    build_shared_modules=no
+    ;;
+  *)
+    build_shared_modules=yes
+    ;;
+  esac
+],
+  build_shared_modules=$enable_shared
+)
+
+if test "x$build_shared_modules" = "xyes"; then
+	shared_mod=yes 
+	AC_CHECK_FUNC([dlopen],
+	  AC_DEFINE([HAVE_LIBDL],[1],[Shared Module Support]),
+	  AC_CHECK_LIB([dl], [dlopen], [],
+	      [AC_MSG_WARN(** dlopen could not be found - modules not enabled);
+	       shared_mod=no]))
+fi
+
+AM_CONDITIONAL(HAVE_SHARED_MODULES, test x$shared_mod = xyes)
+
+# Output Files
+AC_CONFIG_FILES([Makefile src/Makefile modules/Makefile])
+AC_OUTPUT()

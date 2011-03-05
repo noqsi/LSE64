@@ -1,0 +1,17 @@
+Module to drive the 32 bit CCD clock sequencer through the parallel printer port.
+
+	" sequencer" loadmod	# loads the sequencer interface
+
+Open interface and initialize sequencer:
+
+	reset>seq yields nothing
+
+Send a byte to the sequencer:
+
+	n 8>seq yields nothing
+
+Check interface status. This is needed because 8>seq into a busy interface sometimes hangs forever. Sets the flag to true if the interface is busy, false otherwise:
+
+	seqbusy? yields nothing
+
+Higher level words are defined elsewhere: as of this writing, look in SmallPixelClocks.lse.

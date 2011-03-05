@@ -1,0 +1,525 @@
+# $Id: boot.lse,v 1.3 2006/09/09 15:58:13 jpd Exp $
+# file of pidgin for bootstrap process
+
+#     Copyright 2004, 2005, 2006 John P. Doty and Matthew P. Wampler-Doty
+
+#     This file is part of LSE64.
+
+#     LSE64 is free software; you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation; either version 2 of the License, or
+#     (at your option) any later version.
+
+#     LSE64 is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+
+#     You should have received a copy of the GNU General Public License
+#     along with LSE64; if not, write to the Free Software
+#     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
+# n p yields nothing
+# decimal print, newline
+: p , nl
+# hexadecimal
+: h ,h nl
+# text
+: t ,t nl
+
+# destructive stack dump for early debugging
+# : stack depth 0= || h repeat
+
+# dp prec-> yields n
+# dp points to dictionary entry (preserved)
+# n is precedence code
+: ->prec {PRECEDENCE} [] @
+
+# Precedence predicates:
+# dp compiled? yields nothing
+# etc.
+: compiled? ->prec {COMPILED} =
+: immediate? ->prec {IMMEDIATE} =
+: sooner? ->prec {SOONER} =
+
+# flag@ yields n
+# 1 for true, 0 for false
+: flag@ if 1 ifnot 0
+
+# n >flag yields nothing
+# sets flag to n
+: >flag {flag} {!}
+
+# no? yields nothing
+# toggles flag
+: no? flag@ 0=
+
+# pf yields nothing
+# print flag
+: pf flag@ , nl
+
+# s >variable< yields nothing
+# defines variable, s is pointer to name
+: >variable< 1 swap >array<
+
+# variables takes all tokens up to line end and
+# defines variables using them as names.
+: variables <name? ifnot drop && >variable< repeat
+
+# Parser state:
+# ThisToken is a pointer to the current token string
+# ThisWord is a pointer to the corresponding word
+# NextToken is a pointer to the next token string
+# NextWord is a pointer to the corresponding word
+# A token pointer of 0 means not yet scanned
+# A token pointer of -1 means end of line
+# A word pointer of 0 indicates the token is undefined
+variables
+ThisToken ThisWord NextToken NextWord
+
+# Compile buffer: could perhaps get rid of these once the
+# compiler is debugged, but it's too hard with bootcompile
+# sharing the buffer.
+variables
+cptr
+[CBUF] <name? >array<
+cbuf
+
+# -1 isn't built in, and we can't do literals yet, so
+1 neg <name? >named_constant<
+-1
+
+# ca @z yields c
+# Like @, but zeros the cell after fetching its value
+: @z dup @ swap 0 swap !
+
+# sa LookUp yields sa wa
+# Get word associated with the given token.
+# Flag indicates success/failure.
+: LookUp dup find || drop dup >number? if >constant<
+
+# Next>This
+# Moves "next" token info to "this" token. Clears "next" info.
+: Next>This NextToken @z ThisToken ! NextWord @z ThisWord !
+
+# c ThisIsEOL yields nothing
+# Drops useless null pointer and sets ThisToken to indicate EOL
+: ThisIsEOL drop -1 ThisToken !
+
+# sa LookThisUp yields nothing
+# Saves token string sa in ThisToken and looks for it in dictionary.
+# Sets ThisWord and the flag according to the results of the dictionary search.
+: LookThisUp LookUp ThisWord ! ThisToken !
+
+# GetThis yields nothing
+# Gets a new current token, clearing the next token.
+# Changes flag as side effects, but not in any useful way.
+: GetThis Next>This ThisToken @ 0= && <name? ifnot ThisIsEOL && LookThisUp
+
+# Similar defs for next token
+: NextIsEOL drop -1 NextToken !
+: LookNextUp LookUp NextWord ! NextToken !
+: GetNext <name? ifnot NextIsEOL && LookNextUp
+
+# ?EOL yields nothing
+# Gets token, returns true if end of line
+: ?EOL GetThis ThisToken @ -1 =
+
+# ?ThisDefined yields nothing
+# Checks to see if a definition exists for the current token
+: ?ThisDefined ThisWord @ 0= no?
+
+# wa exec
+# Execute word at wa.
+# "You are not expected to understand this"
+: <rjmp> {rsp} {@} {lc} {!}
+: <rexit> rdrop rdrop rdrop rdrop
+: exec ' <rexit> >r >r <rjmp>
+
+# wa >code yields nothing
+# Appends wa to the currently compiling code
+: >code cptr @!+
+# : >code dup ,h sp cptr dup @ h @!+
+
+# "qm yields sa
+# a question mark
+<name? <name? >named_constant<
+? "qm
+
+# qm yields nothing
+# print a question mark
+: qm "qm ,t
+
+# cinit yields nothing
+# Sets up a pseudo dictionary entry in the compile buffer
+: cinit interpret cbuf ! cbuf {BODY} [] cptr !
+
+# forceEOL yields nothing
+# Sets the parser state to that of an empty buffer at end of line.
+: forceEOL cinit -1 NextToken !
+
+# Undefined yields nothing
+# Prints the current token followed by "?"
+# Clears NextToken
+# Flushes rest of input line
+# Returns false
+: Undeflush NextToken @ -1 = || skip>nl
+: Undefined ThisToken @ ,t sp qm nl Undeflush 0 NextToken ! false
+
+# ?Immediate yields nothing
+# Executes the current word if flagged immediate
+# Returns true if word executed, false otherwise
+: ?Immediate ?ThisDefined && ThisWord @ immediate? && ThisWord @ exec true
+
+# ?Sooner yields nothing
+# Executes the next word if flagged sooner
+# Returns true if word executed, false otherwise
+: ?Sooner GetNext NextWord @ 0= no? && NextWord @ sooner? && NextWord @ exec true
+
+# ?Compile yields nothing
+# Compiles the current word if it's defined
+# If undefined, prints message, returns false
+: ?Compile ?ThisDefined ifnot Undefined && ThisWord @ >code
+
+# [compile] yields nothing
+# Compiler loop
+# Returns true if compilation was successful to end of line, false otherwise
+: [compile] ?EOL || ?Immediate &repeat ?Sooner &repeat ?Compile &repeat
+
+# Execute the compile buffer
+variables
+userflag
+: cexec ' exit >code userflag @ >flag cbuf exec flag@ userflag !
+
+# Compile and execute a line
+: compiler cinit [compile] && cexec true
+
+# LSE> yields sa
+# Prompt string
+<name? <name? >named_constant<
+LSE> LSE>
+
+variables
+doPrompt loadDepth Prompter
+' nl Prompter !
+
+: Prompt doPrompt @ 0= || Prompter @ exec
+
+: bye nl 0 sysexit
+
+# popin does a bye if at top input level,
+# otherwise restores previously stacked input stream.
+: popin loadDepth @ dup 0= if bye in@ fclose 1 - loadDepth ! doPrompt ! >in
+
+# The (unbound) command loop
+# The extra level is to insure that the repeat has a place to look
+# for its word's identity.
+: [cmdloop] Prompt compiler eof? if popin repeat
+: cmdloop [cmdloop]
+
+# wa c >precedence yields nothing
+# Sets precedence field of word at wa to c
+: >precedence swap {PRECEDENCE} [] !
+
+# wa immediate yields nothing
+# Sets the precedence field of word at wa to IMMEDIATE
+# Similarly, sooner and compiled
+: immediate {IMMEDIATE} >precedence
+: sooner {SOONER} >precedence
+: compiled {COMPILED} >precedence
+
+# >def< hangs the name on before compilation, OK for bootstrap
+# but interfering with inheritance features of the full language.
+# The following words remove and restore the name. Note that replacing the
+# name's addr with 0 prevents a match with any fixated string, but
+# should cause no trouble. DefName may be inspected during compilation
+# to find the name of the current word: it will be 0 if there is none.
+variables
+DefName
+
+# LastName yields s
+# Pointer to name of last dictionary entry.
+: LastName {deflast} {@} {NAME} []
+
+# UnName yields nothing
+# Remove name from last dictionary entry.
+: UnName LastName @z DefName !
+
+# UnUnName yields nothing
+# Restore name to last dictionary entry
+: UnUnName DefName @z LastName !
+
+# >:< yields nothing
+# Finishes the construction of a colon definition.
+: >:< ' exit >code interpret {deflast} {@} ! cptr @ {deftop} {!} UnUnName
+
+# :def yields sa
+# Clears the parser state, yielding the token to be defined.
+: :def cexec 0 NextToken ! ThisToken @z
+
+# wa (forget) yields nothing
+# Forget def at wa and all more recent
+: (forget) dup {deftop} {!} {PREV} [] @ {deflast} {!}
+
+# :bail yields nothing
+# Bail out of a failed colon def
+: :bail {deflast} {@} (forget)
+
+# : yields nothing
+# Compile a colon definition.
+: : :def >def< UnName {deftop} {@} cptr ! [compile] if >:< ifnot :bail forceEOL
+' : sooner
+
+# At this point, we can put the bootstrap compiler out to pasture:
+# enough of the full compiler exists to continue construction in
+# real LSE, not pidgin!
+
+//XEQ cmdloop
+
+# : skip>nl -1 NextToken !
+' # immediate
+
+:variable : :def >variable< cinit
+' :variable sooner
+
+variables: : variables forceEOL
+' variables: immediate
+
+:array : :def >array< cinit
+' :array sooner
+
+:constant : :def >named_constant< cinit
+' :constant sooner
+
+# Parse a hex constant.
+# Needs work: this version silently gives 0 on error.
+# If it precedes a newline, silently swallows it (a useful trick)
+\ : <name? ifnot drop && >hex? >constant< >code
+' \ immediate
+
+# ca 0 ca [to"] yields sa n da da 34
+[to"] : dup get dup 34 = || swap ! 1 [] swap 1 + swap repeat
+# ca to" yields nothing
+to" : dup 1 [] 0 swap [to"] drop drop drop swap !
+" : get drop {constop} {@} {DATA} [] to" >string< {DATA} neg [] >code
+' " immediate
+
+# ca [def,] yields 0
+[def,] : dup ,h sp dup {NAME} [] @ ,t nl {PREV} [] @ dup 0= no? &repeat
+dictionary : {deflast} {@} [def,] drop
+
+can'tLoad : drop " Load: " ,t ,t sp qm nl false
+
+# sa load yields c c
+load :  dup " r" swap fopen ifnot can'tLoad && \
+	swap drop in@ swap >in doPrompt @ 0 doPrompt ! \
+	loadDepth @ 1 + loadDepth ! 
+
+# Goeke style bound loops
+[setupi] : cptr @ -1 [] dup cptr ! @ ' iterate[ >code >code
+iterate : [setupi] ' ]iterate >code
+' iterate immediate
+&iterate : [setupi] ' ]&iterate >code
+' &iterate immediate
+
+# Functional style conditional
+
+# heritage? yields dp
+# Finds earlier definition, fails if no compiled heritage present.
+# Needs some work on error detection.
+heritage? : DefName @ dup 0= no? && find && dup compiled?
+
+# then separates a predicate from an action. If the predicate
+# is true, it performs the action. If it's false, it invokes
+# the previous definition of the same name, or {nothing} if
+# there is no previous definition.
+{nothing} : # empty jump target
+then : ' |jmp >code heritage? if >code || drop ' {nothing} >code  
+' then immediate
+
+# nondestructive stack dump
+[stack] : count pick , sp
+stack : depth [stack] iterate
+
+# Just the top if deep
+StackDeep : " +" ,t depth 3 - , " , " ,t 3 [stack] iterate
+top : depth 4 > ifelse StackDeep stack
+
+# Prompt with stack dump
+StackPrompt : nl top LSE> ,t sp
+' StackPrompt Prompter !
+
+# Output redirect
+# c out( yields nothing
+# c is a file pointer
+# saves current output on number stack
+# has to tuck it under so it can return
+out( : flush r> out@ >r >r >out
+
+# restore
+)out : flush r> r> >out >r
+
+# Error output
+error( : flush r> out@ >r >r stderr >out
+)error : flush r> r> >out >r
+
+# Move and fill
+
+# n in out move yields nothing
+# move n cells from addr "in" to addr "out"
+variables: MoveIn MoveOut
+[move] : MoveIn @@+ MoveOut @!+
+(setupmove) : MoveOut ! MoveIn !
+move : (setupmove) [move] iterate
+
+# n m out fill yields nothing
+# fill n cells at out with m
+[fill] : MoveIn @ MoveOut @!+
+fill : (setupmove) [fill] iterate
+
+# Text buffer stuff
+
+# text yields sa
+# Get address of text buffer
+text : {constop} {@} {DATA} []
+# textend yields a
+# Get address of the end of the text buffer
+textend : text dup @ 1 + []
+
+# {}>text yields nothing
+# Make text buffer empty
+{}>text : 0 text !
+
+# sa >text yields nothing
+# move string at sa to text buffer
+>text : dup @ 1 + swap text move
+
+# sa >>text yields nothing
+# append string at sa to text buffer
+>>text : dup @ dup text @ + swap rot 1 [] textend move text !
+
+# Parse a character
+# char xyz yields x
+# Literal representing first character of following token
+charror : error( " char can't find a character to parse" ,t nl \
+	)error :bail abort
+char : <token? ifnot charror text 1 [] @ >constant< >code
+' char immediate
+
+# stringiness
+
+# c c1+ yields c
+# "increments" a character
+# yields true for carry, false otherwise
+c1+ : 1 +				# next char, no carry
+c1+ : dup char / = then false		# leave / alone, no carry
+c1+ : dup char z = then drop char a	# z -> a, carry
+c1+ : dup char Z = then drop char A	# Z -> A, carry
+c1+ : dup char 9 = then drop char 0	# 9 -> 0, carry
+
+# s name+ yields s
+# "increments" a string, with carry
+[name+] : dup count [] dup @ c1+ swap !
+name+ : dup @ [name+] &iterate
+
+# in out scopy yields nothing
+# copy a string
+scopy : swap dup @ 1 + swap rot move
+
+# nl " $Id: boot.lse,v 1.3 2006/09/09 15:58:13 jpd Exp $" t
+
+# HAVE_LIBCOMEDI && " COMEDI wrappers are present." t
+# HAVE_SEQ_PORT && " Sequencer interface is available." t
+
+# First command line arg is a file to load
+1 arg ifelse load drop
+
+# We now return you to your regularly scheduled input stream...
+stdin >in 1 doPrompt !
+
+
+# $Log: boot.lse,v $
+# Revision 1.3  2006/09/09 15:58:13  jpd
+# Release 0.3 with license and copyright notices
+#
+# Revision 1.2  2006/02/09 20:30:46  jpd
+# Less chatter on startup, for scripting.
+#
+# Revision 1.1  2005/07/03 15:37:19  jpd
+# *** empty log message ***
+#
+# Revision 1.22  2005/04/23 18:03:39  jpd
+# Flush output when switching.
+#
+# Revision 1.21  2005/04/21 17:16:15  jpd
+# Output redirection.
+#
+# Revision 1.20  2005/04/21 16:28:12  jpd
+# char to quote single characters in LSE
+# FITS character string records
+# seqbusy in SeqStub
+#
+# Revision 1.19  2005/04/12 21:23:05  jpd
+# String move/increment
+#
+# Revision 1.18  2005/04/01 19:20:34  jpd
+# move, fill, text buffer stuff
+#
+# Revision 1.17  2005/03/29 22:12:46  jpd
+# Added @@+ and then. Fixed naming process so heritage is possible.
+#
+# Revision 1.16  2005/03/02 02:10:53  jpd
+# Argument processing.
+# First arg is a file to load.
+#
+# Revision 1.15  2005/02/28 22:44:40  jpd
+# A bit of cleanup, simplification.
+#
+# Revision 1.14  2005/01/18 22:13:18  jpd
+# Finished the basic tutorial.
+#
+# Revision 1.13  2004/12/23 21:11:52  jpd
+# Prompter is now a variable. The default shows stack top.
+#
+# Revision 1.12  2004/12/23 20:41:09  jpd
+# Doc fixes
+# Improved stack dump
+#
+# Revision 1.11  2004/11/13 00:05:21  jpd
+# Sequencer wrapper compiles on Linux.
+#
+# Revision 1.10  2004/11/12 04:20:45  jpd
+# Prompt after undefined word rejected.
+#
+# Revision 1.9  2004/11/12 03:12:22  jpd
+# Fixed bug in #
+# Updated doc
+#
+# Revision 1.8  2004/10/09 16:06:34  jpd
+# Fixed a bunch of hanging issues.
+# Now have a strict interpreter for debugging.
+# Bad compilation no longer leaves a def behind.
+# Interrupts and aborts work.
+# error( and )error for messages to stdout.
+#
+# Revision 1.7  2004/09/25 00:06:18  jpd
+# Fix conditional comedi binding, minor bug in \
+#
+# Revision 1.6  2004/09/24 21:47:57  jpd
+# Implemented iterate and helpers.
+# Can now check for COMEDI.
+#
+# Revision 1.5  2004/09/23 15:06:38  jpd
+# Added file operations.
+#
+# Revision 1.4  2004/09/19 20:56:06  jpd
+# Getting really usable!
+# First cut at comedi.
+#
+# Revision 1.3  2004/09/19 01:24:48  jpd
+# Compiler bugs fixed.
+# Now using fast ITC interpreter.
+#
+# Revision 1.2  2004/09/17 20:57:25  jpd
+# Have working compiler.
+#

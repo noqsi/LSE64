@@ -1,0 +1,177 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>LSE64 Tutorial</title>
+                                                                        
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+</head>
+  <body>
+           The "lse64" command starts LSE64:<br>
+           <br>
+           <samp>[Kitsune:~] jpd% lse64<br>
+           <br>
+           $<!-- Stay away, CVS-->Id: boot.lse,v 1.13 2004/12/23 21:11:52 
+jpd  Exp $ <br>
+           LSE&gt;</samp><br>
+           <br>
+           At the prompt, you may type commands or definitions:<br>
+           <br>
+           <samp>LSE&gt; 6 7 * ,<br>
+           42<br>
+           LSE&gt; <br>
+           </samp><br>
+           This means "push 6 on the stack, push 7 on the stack, multiply,
+ print    the   result".<br>
+           <br>
+           Programs in LSE64 are sequences of "words" separated by white
+space.    A  word may be any sequence of characters not containing white
+space:<br>
+           <br>
+           <code>this-is-one-word<br>
+           this is four words<br>
+           *word&gt;</code><br>
+           <code>彡字辞</code><br>
+           <br>
+           The last two lines each represent one word. As the last line shows 
+  (at   least if you're viewing this through properly configured software), 
+  you may  use  a very wide range of characters. The only requirement is that
+  your character   coding must have ASCII as a subset (most common codes have
+  this property).<br>
+           <br>
+           The default prompt displays the stack contents. Here's the previous
+   example   as a series of separate commands, with stack state displayed
+at   each step:<br>
+           <br>
+           <samp>LSE&gt; 6<br>
+           <br>
+           6 LSE&gt; 7<br>
+           <br>
+           6 7 LSE&gt; *<br>
+           <br>
+           42 LSE&gt; ,<br>
+           42<br>
+           LSE&gt;</samp><samp><br>
+           </samp><br>
+           The common integer arithmetic operators are present:<br>
+           <br>
+           <samp>LSE&gt; 5 4 3 2 1 + / - * ,<br>
+           15<br>
+           LSE&gt; </samp><br>
+           <br>
+           (this is a good example to try line by line if you're puzzled).<br>
+           <br>
+           LSE64 also supports floating point numbers. Unlike many other
+programming      languages, operators are <em>not</em> overloaded. To do
+floating point   arithmetic,   you must use floating point operators:<br>
+           <br>
+           <samp>LSE&gt; 1. 2. 3. 4. 5. +. /. -. *. ,.<br>
+           1.66667<br>
+           LSE&gt; <br>
+           <br>
+           </samp>You may define your<samp></samp> own words using special
+ "defining     words". The definining word <samp>:variable</samp> defines
+a variable.  The   word representing a variable yields the address of the
+variable when  executed.   The word <samp>! </samp>stores a value at that
+address, while  <samp>@ </samp>fetches   the value:<br>
+           <br>
+          <samp>LSE&gt; x :variable<br>
+           <br>
+           LSE&gt; 42 x !<br>
+           <br>
+           LSE&gt; x<br>
+           <br>
+           33607032 LSE&gt; @ </samp>,<samp><br>
+           42<br>
+           LSE&gt; </samp><br>
+           <br>
+           The number "<samp>33607032</samp>" that <samp>x </samp>pushed
+on  the   stack   is the address of the cell that LSE64 allocated for its
+data.  When   you run   this example you'll probably get a different address
+here.<br>
+           <samp></samp><br>
+           If you wish to define several variables at once, <samp>variables</samp>: 
+      is a useful alternative:<br>
+           <br>
+           <samp>LSE&gt; variables: x y z<br>
+           <br>
+           LSE&gt; </samp><br>
+           <br>
+           The word :constant defines a constant, getting its value from
+the   stack:<br>
+           <br>
+           <samp>LSE&gt; 20 3 * three-score :constant<br>
+           <br>
+           LSE&gt; three-score ,<br>
+           60<br>
+           LSE&gt; <br>
+           </samp><br>
+           You can define more complex words in terms of simpler words. Here, 
+  I  define  a new word  <samp>2*</samp> that will multiply the top cell on
+  the  stack by 2:<br>
+           <br>
+           <samp>LSE&gt; 2* : 2 *<br>
+           <br>
+           LSE&gt; 33 2* ,<br>
+           66<br>
+           LSE&gt;</samp><br>
+           <samp><br>
+           </samp>The word <samp>iterate</samp> executes the preceeding word
+  multiple    times. The top stack element is the number of iterations. The
+  following  starts  with one, doubles it sixteen times, and prints the result:<samp>
+ <br>
+           <br>
+           LSE&gt; 1 16 2* iterate ,<br>
+           65536<br>
+           </samp> <samp>LSE&gt;</samp><br>
+           <samp><br>
+         </samp>The word <samp>swap</samp> exchanges the two top stack items:<br>
+         <br>
+         <samp>LSE&gt; 1 2 swap<br>
+         <br>
+         2 1 LSE&gt;</samp><br>
+         <br>
+         The following raises 2 to a power by multiplying 1 by 2 iteratively. 
+  I  need  to provide the 1, but I then need the power to be at the stack 
+top  for <samp>iterate</samp>,  so I push 1 and then <samp>swap</samp>:<br>
+         <samp><br>
+           LSE&gt; 2^n : 1 swap 2* iterate<br>
+           <br>
+           LSE&gt; 12 2^n ,<br>
+           4096<br>
+           LSE&gt;<br>
+         <br>
+         </samp>The word <samp>"</samp> begins a text string, which continues 
+  up  to the next <samp>"</samp> in the input. You must follow the first <samp>"</samp>
+   by white space: if you forget, the parser won't recognize it as a word.
+  <samp>,t</samp>  prints a text string.<br>
+         <samp><br>
+           LSE&gt;</samp><samp> " Don't panic!" ,t  <br>
+           Don't panic!<br>
+           LSE&gt;<br>
+         <br>
+         </samp>To make an unbounded loop, use <samp>repeat</samp>. It jumps
+  back   to the start of a word. This example also shows off <samp>usec</samp>, 
+  which  suspends execution for a given number of microseconds, and <samp>nl</samp>, 
+    which prints a newline. Control-c stops execution, and gets you back to
+  the  command prompt:<br>
+         <br>
+         <samp>  LSE&gt;</samp><samp> " Tick" ,t nl 1000000 usec repeat<br>
+           Tick<br>
+           Tick<br>
+           Tick<br>
+           Tick<br>
+           Tick<br>
+           Tick<br>
+           Tick<br>
+           Tick<br>
+           ^C<br>
+           LSE&gt; <br>
+           </samp><br>
+           That's all for now: go look at the <a href="LSE64.txt">reference 
+manual</a> for all of the   words   I didn't mention here. Give them a try.<br>
+          <br>
+         <br>
+             <br>
+ <br>
+</body>
+</html>

@@ -1,0 +1,241 @@
+LSE64 Reference
+
+Invocation from shell:
+
+lse64 [ file [arg ...]]
+
+If the optional file is given, it is processed as source after initialization.
+Any additional arguments are ignored by default, but may be accessed by
+application code, see "Command Line" below.
+
+Data representation:
+
+Cells are 64 bits, and may hold 2's complement binary signed integers, IEEE
+floating point numbers, or machine addresses. Strings are represented by arrays
+in which cell 0 is the number of characters and the remaining cells are
+the characters.
+
+LSE64 is generally line oriented. Multi-line commands and definitions are
+possible by using \ at the end of a line when you wish to continue compiling
+the next line. Anything that's not part of a definition is executed as a
+command.
+
+Ordinary definitions:
+
+name : word ...
+
+Variables and arrays yield their addresses when executed. Constants yield their
+values:
+
+name :variable		(a variable occupies one cell)
+n name :array		(define an array of n cells)
+c name :constant	(define a constant whose value is c)
+variables name1 name2 ...	(alternate way to define several variables)
+
+Note that everything before the name is executed before the definition is
+processed, and afterward scanning resumes, so:
+
+2 5 * foo :array bar :variable nl
+
+defines a 10 element array "foo", defines a variable "bar", and prints a
+newline.
+
+Comments:
+
+# Swallows tokens to the end of the current line without processing them.
+
+Memory access:
+
+ca @ yields c			(fetch c from address ca)
+ca @z yields c			(fetch c from address ca, replace it with 0)
+c ca ! yields nothing		(store c to address ca)
+caa c @!+ yields nothing	(store indirectly, increment address caa
+				 points to)
+ba n [] yields ca		(offset ba by n cells)
+
+Arithmetic:
+
+n m + yields i	(add)
+n m - yields i	(subtract)
+n m * yields i	(multiply)
+n m / yields i	(divide)
+n m % yields i	(remainder)
+n neg yields i	(negate)
+
+Floating point versions ( +. -. *. /. %. neg.) of the above are also defined.
+
+n float yield x		(convert integer to floating point)
+x fix yields n		(convert floating point to integer)
+
+Bit manipulation:
+
+n m & yields i	(bitwise and)
+n m | yields i	(bitwise or)
+n m ^ yields i	(bitwise xor)
+n ~ yields i	(bitwise not)
+
+Stack gymnastics:
+
+c dup yields c c	(duplicate top stack entry)
+b c swap yields c b	(swap the top two stack entries)
+c drop yields nothing	(forget top stack entry)
+n pick yields c 	(put a copy of the nth cell down atop the stack)
+a b c rot yields b c a	(rotate top 3 cells)
+
+The flag register is separate from the stack. It holds the results of
+comparisons and success/failure of other words. Comparisons set the flag
+according to the test result:
+
+n m = yields nothing	(true if n equals m)
+n m > yields nothing	(true if n greater than m)
+n m < yields nothing	(true if n less than m)
+
+n 0= yields nothing	(true if n is zero)
+n 0> yields nothing	(true if n less than zero)
+n 0< yields nothing	(true if n greater than zero)
+
+Floating point versions ( =. >. <. 0=. 0>. 0<. ) of the above are also defined.
+
+Flag manipulation:
+
+true yields nothing	(unconditionally true)
+false yields nothing	(unconditionally false)
+no? yields nothing	(toggle flag)
+flag@ yields n		(1 for true, 0 for false)
+n >flag yields nothing	(true if n nonzero)
+
+Flow control (all these yield nothing themselves, but action may yield
+something, of course):
+
+if action		(perform action if the flag is true)
+ifnot action		(perform action if the flag is false)
+ifelse action1 action2	(action1 if flag true, action2 otherwise)
+
+Note that each action must be a single word.
+
+then actions		(perform actions if flag is true, else default)
+
+Actions may be any number of words (including zero). If false, executes the previous definition with the same name as the current definition, if any. The previous definition must have been defined with ":". If repeat or its variants are encountered, the branch is back to the start of the first definition in the chain. The purpose of this is case constructs, piecewise functions, etc:
+
+	sign : drop 0
+	sign : dup 0< then drop -1
+	sign : dup 0> then drop 1
+
+This set of definitions yields 1 for positive, -1 for negative, otherwise 0.
+
+&&	(return to caller if flag is false)
+||	(return to caller if flag is true)
+exit	(unconditionally return to caller)
+
+Loops:
+
+repeat			(jump back to the beginning of the current word)
+&repeat			(repeat if flag is true)
+n action iterate	(perform action n times)
+n action &iterate	(iterate while flag is true, at most n times)
+count yields n		(get number of iterations remaining)
+
+"count" counts down, and may only be used in the iterated word itself, not at a lower level (the count is kept on the return stack).
+
+Output:
+
+n , yields nothing	(decimal integer output)
+n ,h yields nothing	(hexadecimal integer output)
+s ,t yields nothing	(string output)
+x ,. yields nothing	(floating point output, decimal)
+sp yields nothing	(output a space)
+nl yields nothing	(output a newline)
+
+Decimal integers and floating point numbers compile to words that push their
+values onto the stack. Other literals:
+
+\ digits yields n	(hexadecimal)
+" up to next" yields as	(pointer to literal string)
+
+Literals are compiled as single words, so they may be used with word-oriented
+flow control, e.g:
+
+pflag : ifelse " true" " false" ,t
+
+\ at end of line has a different function: it suppresses the normal end of line
+processing, continuing compilation on the next line.
+
+Return stack:
+
+c >r yields nothing	(move c from number stack to return stack)
+r> yields c		(move from return stack to number stack)
+r@ yields c		(copy from return stack to number stack)
+rdrop yields nothing	(discard the top cell on the return stack)
+
+Character I/O. Characters are encoded according to the current
+locale. You may only unget a single character.
+
+get yields n		(get a character from input)
+n unget yields nothing	(push character n back to input)
+n put yields nothing	(put a character to output)
+
+I/O control:
+
+stdin yields fp			(file pointer to standard input)
+stdout yields fp		(file pointer to standard output)
+stderr yields fp		(file pinter to standard error)
+in@ yields fp			(current input)
+fp >in yields nothing		(change current input)
+out@ yields fp			(current output)
+fp >out yields nothing		(change current output)
+flush yields nothing		(flush current output)
+eof? yields nothing		(true if current input is at end of file)
+fp ioerror? yields nothing	(true for error condition on stream)
+fp fclose yields nothing	(close a file)
+
+smode sname fopen yields fp
+
+Interface to C library fopen() call. "smode" and "sname" are strings representing the mode and name. Sets the flag to indicate success or failure.
+
+File inclusion:
+
+sa load yields c c
+
+Redirects input to the named file (sa is a string address). The contents of the
+file should be stack neutral, as the data that load pushes on the stack is used
+to restore input upon EOF. Usually used with a literal string:
+
+" myfile.lse" load
+
+As this only redirects input, don't use two of these on the same line.
+
+Command line:
+
+argc yields n		(argument count)
+n arg yields sa		(nth argument string)
+
+If the specified argument does not exist, the string address returned by arg will
+be 0, and the flag will be false. Otherwise, the flag will be true.
+
+
+Error handling:
+
+error( yields nothing		(temporarily redirect output to stderr)
+)error yields nothing		(restore output state)
+
+Note that error( saves the output state on the return stack, so it should be
+balanced by )error within the same definition.
+
+abort yields nothing		(get back to command loop)
+fast yields nothing		(don't check stacks between words)
+fussy yields nothing		(check stacks between words)
+
+In fussy mode, you'll get an error if you over or underflow the number or return
+stack. This is the default. On the architectures tested so far, fast mode is not
+much faster.
+
+
+Miscellaneous:
+
+{} yields nothing		(also does nothing)
+n usec yields nothing		(delay execution by n microseconds)
+now yields n			(UTC in microseconds since 1970)
+dictionary yields nothing	(lists the current dictionary)
+bye yields nothing		(stops LSE)
+
+On MacOS 10.3 and Linux 2.4, "now" appears to deliver real microsecond precision. On the other hand "usec" may delay for an arbitrarily long time: the time commanded is only a minimum. Beware. On a lightly loaded Linux 2.4 system, excess delays of more than 20 milliseconds (!) are common. MacOS 10.3 is a couple of orders of magnitude better here.
