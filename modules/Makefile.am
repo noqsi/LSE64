@@ -11,6 +11,9 @@ modmath_la_SOURCES = modmath.c
 modmath_la_LDFLAGS = $(common_ldflags)
 modmath_la_LIBADD = -lm
 
+fpga_la_sources = fpga.c
+fpga_la_LDFLAGS = $(common_ldflags)
+
 if HAVE_COMEDI
 COMEDI = modcomedi.la
 endif
@@ -20,7 +23,7 @@ SEQ = modsequencer.la
 endif
 
 if HAVE_SHARED_MODULES
-MODULES = $(SEQ) $(COMEDI) modmath.la
+MODULES = $(SEQ) $(COMEDI) modmath.la fpga.la
 endif
 
 pkglib_LTLIBRARIES = $(MODULES)
