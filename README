@@ -1,0 +1,8 @@
+To Install:
+
+You will need autotools installed to generate the compilation machinery.  You can make and install LSE with the following sequence of commands:
+
+> ./autogen.sh
+> ./configure
+> make
+> sudo make install
