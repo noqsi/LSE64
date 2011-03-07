@@ -1,8 +1,49 @@
-To Install:
+1. To Install on a *nix System
 
-You will need autotools installed to generate the compilation machinery.  You can make and install LSE with the following sequence of commands:
+   You will need autotools installed to generate the compilation machinery.  You can make and install LSE with the following sequence of commands:
 
-> ./autogen.sh
-> ./configure
-> make
-> sudo make install
+   > ./autogen.sh
+   > ./configure
+   > make
+
+You can run LSE without installing it globally by typing
+    > cd src
+    > ./t64
+
+You can install it globally using the usual command
+    > sudo make install
+
+2. To Install on the Armadeus
+
+   To install on the Armadeus, you will need autotools as well as a cross compiler.  You can install a cross compiler by cloning the armadeus git repository, using the following command (you will need git installed):
+
+   > git clone git://armadeus.git.sourceforge.net/gitroot/armadeus/armadeus armadeus
+
+   You will want to read the following website for installation instructions: http://www.armadeus.com/wiki/index.php?title=Toolchain
+
+   Assuming you've built the armadeus tool chain, you can now cross compile.  Let:
+   To cross compile, use the following commands
+
+   > ./autogen.sh
+   > ./configure --prefix=<path_to_armadeus_git_repo>/buildroot/build_armvXX/staging_dir/usr/bin/ --host=arm-linux
+   > make
+
+   XX should be the model of your Armadeus board (on my system XX=27).
+
+   To install, you will need to have kermit and tftp set up.  See this website for instructions on how to do this: http://armadeus.com/wiki/index.php?title=Communicate
+
+   Issue the following commands:
+
+   > cd src
+   > cp t64 boot.lse <path_to_tftp>
+   > sudo ifconfig <ethernet_device> 192.168.0.3
+   > kermit -c
+   ...log in to linux on the armadeus if necessary...
+   # tftp -g -r t64 192.168.0.3
+   # tftp -g -r boot.lse 192.168.0.3
+   # chmod +x t64
+   ... quit out of kermit with "ctrl-\ Q"
+
+   Where: 
+          • <path_to_tftp> is the path to your local tftp directory (on my system this is /srv/tftp).
+          • <ethernet_device> is the ethernet device you are talking to the armadeus with (on my system, this is eth1).  If you don't have a device devoted to this, and you have your armadeus connected to your local area network, can skip the ifconfig command provided that you use your IP rather than 192.168.0.3
