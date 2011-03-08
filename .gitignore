@@ -19,3 +19,7 @@ libtool
 stamp-h1
 *~
 INSTALL
+libltdl
+m4
+aclocal.m4
+config.h.in
