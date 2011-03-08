@@ -1,26 +1,29 @@
 common_ldflags = -module
 
-sequencer_la_SOURCES = sequencer.c
-sequencer_la_LDFLAGS = $(common_ldflags)
+modsequencer_la_SOURCES = modsequencer.c
+modsequencer_la_LDFLAGS = $(common_ldflags)
 
-comedi_la_SOURCES = comedi.c
-comedi_la_LDFLAGS = $(common_ldflags)
-comedi_la_LIBADD = $(COMEDILIBS)
+modcomedi_la_SOURCES = modcomedi.c
+modcomedi_la_LDFLAGS = $(common_ldflags)
+modcomedi_la_LIBADD = $(COMEDILIBS)
 
-math_la_SOURCES = math.c
-math_la_LDFLAGS = $(common_ldflags)
-math_la_LIBADD = -lm
+modmath_la_SOURCES = modmath.c
+modmath_la_LDFLAGS = $(common_ldflags)
+modmath_la_LIBADD = -lm
+
+fpga_la_sources = fpga.c
+fpga_la_LDFLAGS = $(common_ldflags)
 
 if HAVE_COMEDI
-COMEDI = comedi.la
+COMEDI = modcomedi.la
 endif
 
 if HAVE_SEQUENCER
-SEQ = sequencer.la
+SEQ = modsequencer.la
 endif
 
 if HAVE_SHARED_MODULES
-MODULES = $(SEQ) $(COMEDI) math.la
+MODULES = $(SEQ) $(COMEDI) modmath.la fpga.la
 endif
 
 pkglib_LTLIBRARIES = $(MODULES)
