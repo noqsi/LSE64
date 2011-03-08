@@ -105,7 +105,7 @@ openf, closef, iterate_init, iterate, anditerate, count, fussy, fast, ifelse,
 argc, arg, now, scan, jfalse, sprint1, openfd;
 
 /* Experimental Module System */
-#ifdef HAVE_LIBLTDL
+#ifdef HAVE_MODS
 prim loadmod, moderror;
 #endif
 

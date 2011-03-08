@@ -3,7 +3,7 @@
 
 AC_PREREQ(2.57)
 AC_INIT(lse64, 0.3, jpd@noqsi.com)
-#AC_CONFIG_MACRO_DIR([libltdl/m4])
+AC_CONFIG_MACRO_DIR([libltdl/m4])
 AC_CONFIG_AUX_DIR([libltdl/config])
 AC_CONFIG_SRCDIR([src/lse64.c])
 AM_CONFIG_HEADER([src/config.h])
@@ -11,14 +11,16 @@ AM_INIT_AUTOMAKE
 
 # Libtool
 LT_CONFIG_LTDL_DIR([libltdl])
-LT_INIT
+LT_INIT([dlopen])
 LTDL_INIT
+AC_LIBLTDL_CONVENIENCE
+AC_LIBTOOL_DLOPEN
+AC_PROG_LIBTOOL
 
 # Checks for programs.
 AC_PROG_CC
 AM_PROG_CC_C_O
 #AC_LIBTOOL_DLOPEN
-AC_PROG_LIBTOOL
 
 # Checks for libraries.
 AC_CHECK_LIB([comedi], [comedi_data_write], 
@@ -67,8 +69,28 @@ AC_ARG_ENABLE(shared-modules,
   build_shared_modules=$enable_shared
 )
 
+if test "x$build_shared_modules" = "xyes"; then
+	ltdl_mods=yes 
+	AC_CHECK_FUNC([lt_dlopenext],
+	AC_DEFINE([HAVE_MODS],[1],[LTDL Shared Module Support]),
+	AC_CHECK_LIB([ltdl], [lt_dlopenext], [],
+		[AC_MSG_WARN(** lt_dlopenext could not be found in ltdl - try vanilla dlopen instead);
+		 ltdl_mods=no]))
+fi
 
-AM_CONDITIONAL(HAVE_SHARED_MODULES, test x$build_shared_modules = xyes)
+AM_CONDITIONAL(LTDL_MODULES, test x$ltdl_mods = xyes)
+
+if test "x$ltdl_mods" = "xno" && test "x$build_shared_modules" = "xyes"; then
+	dl_mods=yes 
+	AC_CHECK_FUNC([dlopen],
+	AC_DEFINE([HAVE_MODS],[1],[DL Shared Module Support]),
+	AC_CHECK_LIB([dl], [dlopen], [],
+		[AC_MSG_WARN(** dlopen could not be found in libdl - modules not enabled);
+		 dl_mods=no]))
+fi
+
+AM_CONDITIONAL(DL_MODULES, test x$dl_mods = xyes)
+AM_CONDITIONAL(HAVE_SHARED_MODULES, test x$ltdl_mods = xyes || test x$dl_mods = xyes)
 
 # Output Files
 AC_CONFIG_FILES([Makefile src/Makefile src/modules/Makefile])
