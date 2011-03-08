@@ -25,10 +25,11 @@ You can install it globally using the usual command
    To cross compile, use the following commands
 
    > ./autogen.sh
+   > export CC=<path_to_armadeus_git_repo>/armadeus/buildroot/build_armvXX/staging_dir/usr/bin/arm-linux-gcc
    > ./configure --prefix=<path_to_armadeus_git_repo>/buildroot/build_armvXX/staging_dir/usr/bin/ --host=arm-linux
    > make
 
-   XX should be the model of your Armadeus board (on my system XX=27).
+   XX should be the model of your Armadeus board (on my system XX=5te).
 
    To install, you will need to have kermit and tftp set up.  See this website for instructions on how to do this: http://armadeus.com/wiki/index.php?title=Communicate
 

@@ -22,27 +22,38 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <dlfcn.h>
+#include <ltdl.h>
 #include <sys/param.h>
 #include "lse64.h"
 
 void loadmod(void) {
-	char static modpath[MAXPATHLEN+1];
 	int (*lse_mod_test)(void) ;
 	char * modname = cstring(0,0);
+        lt_dlhandle modp;
+
+        // Initialize libtool
+        lt_dlinit(); 
+        // Add local modules to search path
+        lt_dladdsearchdir("./modules/");
+
 #ifdef PKGLIBDIR
-	void *modp = dlopen(strcat(strcat(strcpy(modpath, PKGLIBDIR "/mod"),modname),".so"), RTLD_LAZY);
-	if ( ! modp ) modp = dlopen(strcat(strcat(strcpy(modpath, PKGLIBDIR "/mod"),modname),".0"), RTLD_LAZY);
-#else
-	void *modp = dlopen(strcat(strcat(strcpy(modpath, "../modules/.libs/mod"),modname),".so"), RTLD_LAZY);
-	if ( ! modp ) modp =  dlopen(strcat(strcat(strcpy(modpath, "../modules/.libs/mod"),modname),".0"), RTLD_LAZY);
+        // Add global modules to search path
+        lt_dladdsearchdir(PKGLIBDIR);
 #endif
+        // try to load the module
+        modp = lt_dlopenext(modname);
+
+        // If we fail, set the flag to 0 and exit
 	flag = 0;
-	if (modp == NULL) return;
-	if ( !(lse_mod_test = (int (*)(void)) dlsym(modp, "lse_mod_test")) ) return;
+	if ( ! modp ) return;
+
+        // Else make sure the module is sane
+	if ( !(lse_mod_test = (int (*)(void)) lt_dlsym(modp, "lse_mod_test")) ) return;
+        // If all is well, then the test value 
+        // should return 1, so se the flag to this and 
 	flag = lse_mod_test();
 }
 
 void moderror(void) {
-	printf("%s",dlerror());
+	printf("%s",lt_dlerror());
 }
