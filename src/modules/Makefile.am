@@ -22,8 +22,6 @@ if HAVE_SEQUENCER
 SEQ = sequencer.la
 endif
 
-if HAVE_SHARED_MODULES
-MODULES = $(SEQ) $(COMEDI) math.la fpga.la
-endif
+MODULES = math.la fpga.la $(SEQ) $(COMEDI) 
 
 pkglib_LTLIBRARIES = $(MODULES)

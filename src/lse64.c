@@ -275,11 +275,8 @@ void build_primitives( void )
     build_primitive( now, "now" );
     build_primitive( sprint1, "sprint1" );
     build_primitive( openfd, "fdopen" );
-/* Experimental Module System */
-#ifdef HAVE_MODS
     build_primitive( loadmod, "loadmod" );
     build_primitive( moderror, "moderror" );
-#endif
 
 /*
  * VM/dictionary "registers":

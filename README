@@ -25,8 +25,13 @@ You can install it globally using the usual command
    To cross compile, use the following commands
 
    > ./autogen.sh
-   > export CC=<path_to_armadeus_git_repo>/armadeus/buildroot/build_armvXX/staging_dir/usr/bin/arm-linux-gcc
-   > ./configure --prefix=<path_to_armadeus_git_repo>/buildroot/build_armvXX/staging_dir/usr/bin/ --host=arm-linux --target=arm-linux
+   > export xprefix=<path_to_armadeus_git_repo>/buildroot/build_armvXX/staging_dir/
+   > export CC=${xprefix}/usr/bin/arm-linux-gcc
+   > export CXX=${xprefix}/usr/bin/arm-linux-g++
+   > export LD=${xprefix}/usr/bin/arm-linux-ld
+   > export AS=${xprefix}/usr/bin/arm-linux-as
+   > export NM=${xprefix}/usr/bin/arm-linux-nm
+   > ./configure --prefix=${xprefix} --host=arm-linux --target=arm-linux --build=arm-linux
    > make
 
    XX should be the model of your Armadeus board (on my system XX=5te).

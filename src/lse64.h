@@ -102,12 +102,7 @@ compile_to_buffer, literal, noop, cells, putd, putx, putf, depth, nl, space,
 put_string, get_stdin, get_stdout, get_stderr, get_in, put_in, get_out,
 put_out, flush, eofq, ioerrq, ToNumber, HexNumber, delay, sysexit, ffloat, fix,
 openf, closef, iterate_init, iterate, anditerate, count, fussy, fast, ifelse,
-argc, arg, now, scan, jfalse, sprint1, openfd;
-
-/* Experimental Module System */
-#ifdef HAVE_MODS
-prim loadmod, moderror;
-#endif
+argc, arg, now, scan, jfalse, sprint1, openfd, loadmod, moderror;
 
 void build_primitive( prim p, char *name );
 void build_named_constant( cell c, char *name );
