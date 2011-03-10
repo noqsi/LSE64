@@ -42,12 +42,16 @@ You can install it globally using the usual command
 
    > cd src
    > cp t64 boot.lse <path_to_tftp>
+   > tar cf modules.tar modules
+   > cp modules.tar <path_to_tftp>
    > sudo ifconfig <ethernet_device> 192.168.0.3
    > kermit -c
    ...log in to linux on the armadeus if necessary...
    # tftp -g -r t64 192.168.0.3
    # tftp -g -r boot.lse 192.168.0.3
    # chmod +x t64
+   # tftp -g -r modules.tar 192.168.0.3
+   # tar xf modules.tar
    ... quit out of kermit with "ctrl-\ Q"
 
    Where: 
