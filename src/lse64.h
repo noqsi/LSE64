@@ -38,14 +38,14 @@ extern cell	*stack,		/* base of stack */
 		*constop,   /* top of constant dictionary */
 		*constlast; /* last entry of constant dictionary */
 		
-extern int flag;   /* the flag register */
+extern cell flag;   /* the flag register */
 
 extern cell cptr;		/* compile pointer */
 extern cell cbuf;		/* loc of compile buffer */
 
 extern FILE *in, *out;
 
-extern int gargc;
+extern cell gargc;
 extern char **gargv;
 
 /*

@@ -41,7 +41,7 @@ cell	*stack,		/* base of stack */
 	*constop,	/* top of constant dictionary */
 	*constlast;	/* last entry of constant dictionary */
 		
-int flag;		/* the flag register */
+cell flag;		/* the flag register */
 
 cell cptr;		/* compile pointer */
 cell cbuf;		/* loc of compile buffer */
@@ -289,7 +289,7 @@ void build_primitives( void )
     build_named_constant( (cell) &rstack, "{rstack}" );
     build_named_constant( (cell) &rsp, "{rsp}" );
     build_named_constant( (cell) &lc, "{lc}" );
-    build_named_constant( (cell) &flag, "{flag}" );
+    build_named_constant( (cell) &flag, "flag" );	/* This one *is* a cell */
         
     build_named_constant( (cell) &deftop, "{deftop}" );
     build_named_constant( (cell) &deflast, "{deflast}" );
@@ -384,7 +384,7 @@ void bootstrap( void )
 	}		
  }  
  
-int gargc;
+cell gargc;
 char **gargv;
 
 int main( int argc, char *argv[] )
