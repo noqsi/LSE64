@@ -38,7 +38,7 @@ extern cell	*stack,		/* base of stack */
 		*constop,   /* top of constant dictionary */
 		*constlast; /* last entry of constant dictionary */
 		
-extern cell flag;   /* the flag register */
+extern intptr_t flag;   /* the flag register */
 
 extern cell cptr;		/* compile pointer */
 extern cell cbuf;		/* loc of compile buffer */

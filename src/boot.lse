@@ -48,7 +48,7 @@
 
 # n >flag yields nothing
 # sets flag to n
-: >flag flag !
+: >flag flag {!}
 
 # no? yields nothing
 # toggles flag

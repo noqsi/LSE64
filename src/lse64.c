@@ -41,7 +41,7 @@ cell	*stack,		/* base of stack */
 	*constop,	/* top of constant dictionary */
 	*constlast;	/* last entry of constant dictionary */
 		
-cell flag;		/* the flag register */
+intptr_t flag;		/* the flag register */
 
 cell cptr;		/* compile pointer */
 cell cbuf;		/* loc of compile buffer */
