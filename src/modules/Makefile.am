@@ -14,6 +14,11 @@ math_la_LIBADD = -lm
 fpga_la_sources = fpga.c
 fpga_la_LDFLAGS = $(common_ldflags)
 
+ico_la_sources = ico.c
+ico_la_CFLAGS = -pthread
+ico_la_LDFLAGS = $(common_ldflags)
+ico_la_LIBADD = $(PIGPIOLIBS)
+
 if HAVE_COMEDI
 COMEDI = comedi.la
 endif
@@ -22,6 +27,10 @@ if HAVE_SEQUENCER
 SEQ = sequencer.la
 endif
 
-MODULES = math.la fpga.la $(SEQ) $(COMEDI) 
+if HAVE_PIGPIO
+ICO = ico.la
+endif
+
+MODULES = math.la fpga.la $(SEQ) $(COMEDI) $(ICO)
 
 pkglib_LTLIBRARIES = $(MODULES)
