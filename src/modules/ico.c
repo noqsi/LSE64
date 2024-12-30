@@ -49,7 +49,7 @@ static unsigned gp2bits( unsigned x ) {
 
 }
 
-#define PPDIR 20	// direction bit. 1 = read, 0 = write
+#define PPDIR 20	// direction bit. 0 = read, 1 = write
 #define PPCLK 21	// Pulse high for transfer
 #define PPRSEL 17	// Register select bit
 
@@ -58,7 +58,7 @@ static void set_port_mode( unsigned mode ) {
 	
 	if( mode == current_mode ) return;
 	
-	if( mode == PI_OUTPUT ) gpioWrite( PPDIR, 0 );
+	if( mode == PI_OUTPUT ) gpioWrite( PPDIR, 1 );
 	
 	gpioSetMode( 18, mode );
 	gpioSetMode( 22, mode );
@@ -69,7 +69,7 @@ static void set_port_mode( unsigned mode ) {
 	gpioSetMode( 19, mode );
 	gpioSetMode( 16, mode );
 	
-	if( mode == PI_INPUT ) gpioWrite( PPDIR, 1);
+	if( mode == PI_INPUT ) gpioWrite( PPDIR, 0);
 	
 	current_mode = mode;
 }
@@ -87,6 +87,7 @@ static void ico_get( void ) {
 	
 	gpioWrite( PPRSEL, *sp );
 	gpioWrite( PPCLK, 1 );
+	gpioDelay( 1 );				// Give the port time to select
 	*sp = gp2bits( gpioRead_Bits_0_31() );
 	gpioWrite( PPCLK, 0 );
 }
@@ -133,11 +134,11 @@ void __attribute__((constructor)) mod_init(void) {
         build_primitive( ico_poll, "ico-poll" );
 
 	gpioWrite( PPCLK, 0 );		// inactive
-	gpioWrite( PPDIR, 0 );		// tell FPGA not to drive
+	gpioWrite( PPDIR, 1 );		// tell FPGA not to drive
         gpioSetMode( PPCLK, PI_OUTPUT );	// Make sure
 	gpioWrite( PPCLK, 0 );
         gpioSetMode( PPDIR, PI_OUTPUT );
-	gpioWrite( PPDIR, 0 );
+	gpioWrite( PPDIR, 1 );
 	gpioSetMode( PPRSEL, PI_OUTPUT);
 	
 // pigpio wraps signal() and overrides existing handlers, so
