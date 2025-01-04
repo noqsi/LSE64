@@ -2,6 +2,7 @@
 #include "config.h"
 #include <pigpio.h>
 #include <signal.h>
+#include <stdlib.h>
 
 extern void interrupt( int sig );	// LSE64's interrupt handler
 
@@ -146,6 +147,10 @@ void __attribute__((constructor)) mod_init(void) {
 	
 	gpioSetSignalFunc( SIGINT, interrupt );
 	gpioSetSignalFunc( SIGABRT, interrupt );
+
+// gets stuck on hangup, so exit here
+
+	gpioSetSignalFunc( SIGHUP, exit );
 
 }
 	
