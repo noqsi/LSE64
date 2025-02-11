@@ -337,6 +337,15 @@ heritage? : DefName @ dup 0= no? && find && dup compiled?
 then : ' |jmp >code heritage? if >code || drop ' {nothing} >code  
 ' then immediate
 
+# case construct
+# Similar to then, but compares the TOS to the NOS.
+# Performs the action if they match, otherwise ascends to the previously defined
+# word of the same name.
+# The NOS is passed along to the action or the previously defined word.
+(case) : swap dup rot =
+case : ' (case) >code ' |jmp >code heritage? if >code || drop ' {nothing} >code
+' case immediate
+
 # nondestructive stack dump
 [stack] : count pick , sp
 stack : depth [stack] iterate

@@ -123,6 +123,19 @@ Actions may be any number of words (including zero). If false, executes the prev
 
 This set of definitions yields 1 for positive, -1 for negative, otherwise 0.
 
+nt nc case actions	(perform actions if nt equals nc, else default)
+
+Similar to then, but for values rather than predicates. Example:
+
+	z : , "  unknown" ,t
+	z : 1 case , "  is one" ,t
+	z : 2 case , "  is two" ,t
+	
+	LSE> 2 z
+	2 is two
+	LSE> 9 z
+	9 unknown
+
 &&	(return to caller if flag is false)
 ||	(return to caller if flag is true)
 exit	(unconditionally return to caller)
