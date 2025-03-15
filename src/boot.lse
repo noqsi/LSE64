@@ -93,10 +93,33 @@ cbuf
 # Like @, but zeros the cell after fetching its value
 : @z dup @ swap 0 swap !
 
+# Vocabulary stack stuff
+
+# index of top, active vocabulary address, root vocabulary
+variables
+;voctop ;active LSE
+0 ;voctop !
+LSE ;active !
+
+# Make the vocabulary stack the size of the compile buffer for now
+[CBUF] <name? >array<
+;vocstack
+LSE ;vocstack !
+
+# sa n (vfind) yields wa n
+# Flag indicates success/failure
+: (vfind) dup ;vocstack swap [] @ @ {deflast} {!} swap find swap || dup 0= no? && 1 - repeat
+# sa vfind yields wa
+# note that this saves and restores {deflast}, since (vfind) smashes it
+: vfind {deflast} {@} swap ;voctop @ (vfind) drop swap {deflast} {!}
+
+# ^deflast restores {deflast} from the active vocabulary, for aborts and such
+: ^deflast ;active @ @ {deflast} {!}
+
 # sa LookUp yields sa wa
 # Get word associated with the given token.
 # Flag indicates success/failure.
-: LookUp dup find || drop dup >number? if >constant<
+: LookUp dup vfind || drop dup >number? if >constant<
 
 # Next>This
 # Moves "next" token info to "this" token. Clears "next" info.
@@ -152,7 +175,8 @@ cbuf
 
 # cinit yields nothing
 # Sets up a pseudo dictionary entry in the compile buffer
-: cinit interpret cbuf ! cbuf {BODY} [] cptr !
+# Makes sure the active vocabulary is up to date
+: cinit interpret cbuf ! cbuf {BODY} [] cptr ! {deflast} {@} ;active @ !
 
 # forceEOL yields nothing
 # Sets the parser state to that of an empty buffer at end of line.
@@ -212,10 +236,9 @@ doPrompt loadDepth Prompter
 : popin loadDepth @ dup 0= if bye in@ fclose 1 - loadDepth ! doPrompt ! >in
 
 # The (unbound) command loop
-# The extra level is to insure that the repeat has a place to look
-# for its word's identity.
+# Be sure that {deflast} is ok when re-entering after a fault.
 : [cmdloop] Prompt compiler eof? if popin repeat
-: cmdloop [cmdloop]
+: cmdloop ^deflast [cmdloop]
 
 # wa c >precedence yields nothing
 # Sets precedence field of word at wa to c
@@ -270,6 +293,10 @@ DefName
 : : :def >def< UnName {deftop} {@} cptr ! [compile] if >:< ifnot :bail forceEOL
 ' : sooner
 
+# Initialize the vocabulary state in preparation for full compilation
+
+{deflast} {@} LSE !
+
 # At this point, we can put the bootstrap compiler out to pasture:
 # enough of the full compiler exists to continue construction in
 # real LSE, not pidgin!
@@ -281,6 +308,7 @@ DefName
 
 :variable : :def >variable< cinit
 ' :variable sooner
+
 
 variables: : variables forceEOL
 ' variables: immediate

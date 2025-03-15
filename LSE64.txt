@@ -239,9 +239,33 @@ fast yields nothing		(don't check stacks between words)
 fussy yields nothing		(check stacks between words)
 
 In fussy mode, you'll get an error if you over or underflow the number or return
-stack. This is the default. On the architectures tested so far, fast mode is not
-much faster.
+stack. This is the default. On architectures with branch prediction (most of them),
+fast mode is not much faster.
 
+Vocabularies:
+
+Vocabularies are collections of definitions. When LSE64 searches for a definition, it starts with the top vocabulary on the vocabulary stack. It works its way down the stack, until it finds a vocabulary containing the definition. New definitions go into the "active vocabulary".
+
+name :vocabulary
+
+This creates an empty vocabulary. Executing its name will leave a reference to the vocabulary on the stack.
+
+vr vocabulary( yields nothing
+
+This pushes the vocabulary referred to by vr onto the vocabulary stack and makes it the active vocabulary.
+
+)vocabulary yields nothing
+
+This drops the top vocabulary from the vocabulary stack and sets the active vocabulary from the new stack top.
+
+vr search( yields nothing
+)search yields nothing
+
+Similar to vocabulary( and )vocabulary, except they don't change the active vocabulary, just the vocabulary stack.
+
+The definitions for a particular then or case construct must be together within the same vocabulary. To assemble these, the compiler seaches the active vocabulary: it does not use the vocabulary stack.
+
+The inititial LSE definitions are contained within the LSE vocabulary. It is defined within itself, placed on the vocabulary stack, and assigned to the active vocabulary at startup.
 
 Miscellaneous:
 
