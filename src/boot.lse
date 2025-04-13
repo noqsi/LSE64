@@ -97,7 +97,7 @@ cbuf
 
 # index of top, active vocabulary address, root vocabulary
 variables
-;voctop ;active LSE
+;voctop ;active LSE ;voctmp
 0 ;voctop !
 LSE ;active !
 
@@ -106,12 +106,12 @@ LSE ;active !
 ;vocstack
 LSE ;vocstack !
 
-# sa n (vfind) yields wa n
+# n (vfind) yields wa n
 # Flag indicates success/failure
-: (vfind) dup ;vocstack swap [] @ @ {deflast} {!} swap find swap || dup 0= no? && 1 - repeat
+: (vfind) dup ;vocstack swap [] @ @ {deflast} {!} ;voctmp @ find swap || dup 0= no? && swap drop 1 - repeat
 # sa vfind yields wa
 # note that this saves and restores {deflast}, since (vfind) smashes it
-: vfind {deflast} {@} swap ;voctop @ (vfind) drop swap {deflast} {!}
+: vfind ;voctmp ! {deflast} {@} ;voctop @ (vfind) drop swap {deflast} {!}
 
 # ^deflast restores {deflast} from the active vocabulary, for aborts and such
 : ^deflast ;active @ @ {deflast} {!}
@@ -462,6 +462,30 @@ name+ : dup @ [name+] &iterate
 # in out scopy yields nothing
 # copy a string
 scopy : swap dup @ 1 + swap rot move
+
+# vocabulary stack manipulation
+
+# vr search( yields nothing
+# push vocabulary reference to vocabulary stack
+
+search( : ;voctop @ 1 + dup ;voctop ! ;vocstack swap [] !
+
+# )search yields nothing
+# remove top vocabulary reference from vocabulary stack
+
+)search : ;voctop @ 1 - ;voctop !
+
+# vr vocabulary( yields nothing
+# push vocabulary reference to vocabulary stack
+# and make it the active vocabulary
+
+vocabulary( : dup search( ;active ! ^deflast
+
+# vr )vocabulary yields nothing
+# remove top vocabulary reference from vocabulary stack
+# and make the new top vocabulary the active vocabulary
+
+)vocabulary : ;voctop @ 1 - dup ;voctop ! ;vocstack swap [] @ ;active ! ^deflast
 
 # nl " $Id: boot.lse,v 1.3 2006/09/09 15:58:13 jpd Exp $" t
 
