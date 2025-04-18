@@ -1,8 +1,8 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.57)
-AC_INIT(lse64, 0.3, jpd@noqsi.com)
+AC_PREREQ([2.71])
+AC_INIT([lse64],[0.3],[jpd@noqsi.com])
 AC_CONFIG_MACRO_DIR([libltdl/m4])
 AC_CONFIG_AUX_DIR([libltdl/config])
 AC_CONFIG_SRCDIR([src/lse64.c])
@@ -13,14 +13,21 @@ AM_INIT_AUTOMAKE
 LT_CONFIG_LTDL_DIR([libltdl])
 LT_INIT([dlopen])
 LTDL_INIT
-AC_LIBLTDL_CONVENIENCE
-AC_LIBTOOL_DLOPEN
-AC_PROG_LIBTOOL
+_LT_CONFIG_LTDL_DIR([m4_default([], [libltdl])])
+_LTDL_CONVENIENCE
+_LT_SET_OPTION([LT_INIT],[dlopen])
+m4_warn([obsolete],[AC_LIBTOOL_DLOPEN: Remove this warning and the call to _LT_SET_OPTION when you
+put the 'dlopen' option into LT_INIT's first parameter.])
+
+LT_INIT
 
 # Checks for programs.
 AC_PROG_CC
 AM_PROG_CC_C_O
-#AC_LIBTOOL_DLOPEN
+#_LT_SET_OPTION([LT_INIT],[dlopen])
+m4_warn([obsolete],[AC_LIBTOOL_DLOPEN: Remove this warning and the call to _LT_SET_OPTION when you
+put the 'dlopen' option into LT_INIT's first parameter.])
+
 
 # Checks for libraries.
 AC_CHECK_LIB([comedi], [comedi_data_write], 
@@ -33,7 +40,15 @@ AM_CONDITIONAL(HAVE_COMEDI, [test "x$COMEDILIBS" != x])
 AC_CHECK_LIB([m], [fmod])
 
 # Checks for header files.
-AC_HEADER_STDC
+m4_warn([obsolete],
+[The preprocessor macro `STDC_HEADERS' is obsolete.
+  Except in unusual embedded environments, you can safely include all
+  ISO C90 headers unconditionally.])dnl
+# Autoupdate added the next two lines to ensure that your configure
+# script's behavior did not change.  They are probably safe to remove.
+AC_CHECK_INCLUDES_DEFAULT
+AC_PROG_EGREP
+
 AC_CHECK_HEADERS([dlfcn.h math.h limits.h locale.h stdint.h stdlib.h string.h sys/param.h unistd.h])
 
 # Parallel Port/Sequencer stuff
@@ -50,4 +65,4 @@ AC_CHECK_FUNCS([setlocale])
 
 # Output Files
 AC_CONFIG_FILES([Makefile src/Makefile src/modules/Makefile])
-AC_OUTPUT()
+AC_OUTPUT
